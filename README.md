@@ -144,3 +144,101 @@ kubernetes-dashboard   Active   52m
 As shown above the `demo` namespace got created.
 
 ## Add a pod to the clusters
+
+Add a new file to the `base` directory named `nginx-dep.yaml` with the following content:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: nginx
+  name: nginx
+  namespace: demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - image: nginx
+        name: nginx
+```
+Edit the `kustomization.yaml` and add the new deployment:
+
+```yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- demo-ns.yaml
+- nginx-dep.yaml
+```
+Change to the `acpt` directory and add a file named `flux-patch.yaml` with the following content:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: nginx
+  annotations:
+    flux.weave.works/automated: "true"
+  name: nginx
+  namespace: demo
+```
+The above annotation will deploy new images automatically.
+
+Change to the `prod` directory and add a file named `flux-patch.yaml` with the following content:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: nginx
+  annotations:
+    flux.weave.works/automated: "false"
+  name: nginx
+  namespace: demo
+```
+With the above annotation we prevent autmatic image updates in production.
+
+In the prod directory add a new file named `nginx-dep.yaml` wit the following content:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: nginx
+  name: nginx
+  namespace: demo
+spec:
+  replicas: 2
+```
+With this kustomization we scale the nginx to 2 in production.  Edit the `kustomization.yam` to add the file above:
+
+```yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+bases:
+- ../base/
+patchesStrategicMerge:
+- nginx-dep.yaml
+```
+
+Commit and push everything. Flux syncs the repository every 5 minutes. After that we should find in `acpt` one nginx pod running and in `prod` two pod's.
+
+Example:
+
+```bash
+kubectl -n demo get pods
+NAME                     READY   STATUS    RESTARTS   AGE
+nginx-57b5958569-f4znb   1/1     Running   0          16m
+nginx-57b5958569-ngktd   1/1     Running   0          16m
+```
