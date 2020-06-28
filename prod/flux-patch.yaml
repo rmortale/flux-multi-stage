@@ -1,0 +1,10 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: nginx
+  annotations:
+    flux.weave.works/automated: "false"
+  name: nginx
+  namespace: demo
+  

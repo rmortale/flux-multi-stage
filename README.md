@@ -58,7 +58,7 @@ Add public key to our Github repository as a deploy key with write permission! T
     kubectx mini-prod
     fluxctl identity --k8s-fwd-ns flux
 
-## Add resources to the clusters
+## Add a namespace to the clusters
 
 Go to your cloned repository `flux-multi-stage`. Add the file `.flux.yaml` to the root with the following content:
 
@@ -115,4 +115,32 @@ Our repository now should look like:
 └── README.md
 ```
 
+Commit and push everything. Flux syncs the repository every 5 minutes. After that we should find our `demo` namespace created in both clusters.
 
+Go and list the namespaces in our clusters.
+
+```bash
+kubectx mini-acpt
+kubectl get ns
+
+kubectx mini-prod
+kubectl get ns
+```
+
+The output should be like this:
+
+```bash
+kubectl get ns   
+NAME                   STATUS   AGE
+default                Active   4h17m
+demo                   Active   5m13s
+flux                   Active   53m
+kube-node-lease        Active   4h17m
+kube-public            Active   4h17m
+kube-system            Active   4h17m
+kubernetes-dashboard   Active   52m
+```
+
+As shown above the `demo` namespace got created.
+
+## Add a pod to the clusters
